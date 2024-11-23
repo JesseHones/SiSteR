@@ -8,7 +8,7 @@
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <sys/mman.h>
+//#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -40,10 +40,16 @@ public:
 
         int width = imC.cols, height = imC.rows;
 
-        Mat dispC0 = Mat(height, width, CV_32FC1);
+        /*Mat dispC0 = Mat(height, width, CV_32FC1);
         Mat dispC90f = Mat(width, height, CV_32FC1);
         Mat dispC180 = Mat(height, width, CV_32FC1);
         Mat dispC270f = Mat(width, height, CV_32FC1);
+        Mat dispRight = Mat(height, width, CV_32FC1);*/
+
+        Mat dispC0 = Mat(height, width, CV_32FC1);
+        Mat dispC90f = Mat(height, width, CV_32FC1);
+        Mat dispC180 = Mat(height, width, CV_32FC1);
+        Mat dispC270f = Mat(height, width, CV_32FC1);
         Mat dispRight = Mat(height, width, CV_32FC1);
 
         Mat horizontalDisp = Mat(height, width, CV_32FC1);
@@ -88,9 +94,14 @@ public:
         end = clock();
         std::cout << "Vertical Disparity processed in " << double(end - begin) / CLOCKS_PER_SEC << " sec." << std::endl;
 
-        for (int i = 0; i < height; i++)
+        std::cout << "Height " << height << " Width " << width << std::endl;
+
+        for (int i = 0; i < height; i++) 
+        {
             for (int j = 0; j < width; j++)
             {
+                //std::cout << "i " << i << " j " << j << std::endl;
+
                 if (fabs(dispC0.at<float>(i, j) - dispC90f.at<float>(i, j)) < 3 && fabs(dispC90f.at<float>(i, j) - dispC180.at<float>(i, j)) < 3 && fabs(dispC180.at<float>(i, j) - dispC270f.at<float>(i, j)) < 3)
                     consensus.at<float>(i, j) = (dispC0.at<float>(i, j) + dispC90f.at<float>(i, j) + dispC180.at<float>(i, j) + dispC270f.at<float>(i, j)) / 4;
                 else
@@ -104,10 +115,19 @@ public:
                         maxDisp = dispC180.at<float>(i, j);
                     if (dispC270f.at<float>(i, j) > maxDisp)
                         maxDisp = dispC270f.at<float>(i, j);
+                   
                     consensus.at<float>(i, j) = maxDisp; //(dispC0.at<float>(i,j)+dispC90f.at<float>(i,j)+dispC180.at<float>(i,j)+dispC270f.at<float>(i,j))/nonzeros;
                 }
             }
+            //std::cout << "Height i " << i << std::endl;
+        }
 
+        //Height 864 Width 1024
+    /*      i 863 j 863
+            i 864 j 0
+            OpenCV(4.5.5) Error: Assertion failed((unsigned)i0 < (unsigned)size.p[0]) in cv::Mat::at, file C : \working\opencv - 4.5.5\modules\core\include\opencv2 / core / mat.inl.hpp, line 898*/
+
+        std::cout << "calcs finished " << std::endl;
         horizontalDisp.convertTo(horizontalDisp, CV_16UC1);
         verticalDisp.convertTo(verticalDisp, CV_16UC1);
         multiDisp.convertTo(multiDisp, CV_16UC1);
@@ -116,6 +136,7 @@ public:
         disp_horizontal = horizontalDisp(Rect(dispCount, dispCount, width - (dispCount * 2), height - (dispCount * 2))) * 255;
         disp_vertical = verticalDisp(Rect(dispCount, dispCount, width - (dispCount * 2), height - (dispCount * 2))) * 255;
         disp_multiview = multiDisp(Rect(dispCount, dispCount, width - (dispCount * 2), height - (dispCount * 2))) * 255;
+  
     }
 
 protected:
